@@ -10,32 +10,52 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
-        body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
+        /* UI Styles */
+        body { font-family: 'Helvetica', Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
         .container { background: white; max-width: 500px; margin: auto; padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         h2 { color: #2e7d32; border-bottom: 2px solid #2e7d32; padding-bottom: 10px; margin-top: 0; }
         .status-box { background: #e8f5e9; padding: 10px; border-radius: 4px; border-left: 4px solid #2e7d32; margin-bottom: 20px; font-size: 13px; }
         label { display: block; margin-top: 15px; font-weight: bold; font-size: 13px; }
         input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
         button { width: 100%; padding: 12px; background: #2e7d32; color: white; border: none; border-radius: 4px; font-weight: bold; margin-top: 20px; cursor: pointer; }
-        
         #successScreen { display: none; text-align: center; }
-        
-        /* THE HIDDEN PDF TEMPLATE - PIXEL PERFECT SETUP */
+
+        /* THE 1000% REPLICA TEMPLATE */
         #pdfTemplate {
-            position: absolute; left: -9999px; top: -9999px; /* Hidden from view */
-            width: 794px; height: 1123px; /* A4 size at 96 DPI */
-            background: white; padding: 60px; box-sizing: border-box;
-            color: #000; text-align: left; line-height: 1.3;
+            position: absolute; left: -9999px; top: -9999px;
+            width: 794px; height: 1123px; /* A4 at 96DPI */
+            background: white; padding: 45px 55px; box-sizing: border-box;
+            color: #000; text-align: left; line-height: 1.2;
         }
-        .pdf-header { text-align: center; font-weight: bold; font-size: 22px; margin-bottom: 30px; }
-        .pdf-section-title { font-weight: bold; margin-top: 20px; margin-bottom: 5px; text-decoration: underline; }
-        .pdf-row { margin-bottom: 4px; font-size: 15px; display: flex; }
-        .pdf-label { font-weight: bold; min-width: 130px; }
-        .pdf-value-title { font-weight: bold; text-transform: uppercase; }
-        .pdf-qr-container { position: absolute; right: 60px; top: 380px; text-align: center; }
-        .pdf-footer { position: absolute; bottom: 40px; width: calc(100% - 120px); border-top: 1px solid #eee; padding-top: 10px; font-size: 10px; color: #888; display: flex; justify-content: space-between; }
+        .header-line { border-top: 2px solid #000; margin-bottom: 25px; }
+        .pdf-header { color: #2e7d32; font-weight: bold; font-size: 24px; display: inline-block; margin-bottom: 15px; }
+        .top-ndn { float: right; font-size: 14px; font-weight: bold; color: #333; margin-top: 10px; }
         
-        .preview-container { margin: 20px auto; border: 1px solid #ccc; max-width: 400px; box-shadow: 0 0 10px rgba(0,0,0,0.2); }
+        .field-block { margin-bottom: 18px; clear: both; }
+        .pdf-row { display: flex; align-items: flex-start; margin-bottom: 3px; font-size: 15px; }
+        .pdf-label { font-weight: bold; min-width: 145px; }
+        .pdf-val-title { font-weight: bold; text-transform: uppercase; flex: 1; line-height: 1.3; }
+        .pdf-val-reg { font-weight: normal; flex: 1; }
+
+        .section-header { font-weight: bold; font-size: 16px; margin-top: 25px; margin-bottom: 5px; }
+        .sub-text { margin-left: 0; font-size: 14px; margin-bottom: 4px; }
+        .complied-tag { background: #2e7d32; color: white; padding: 1px 6px; border-radius: 2px; font-size: 13px; }
+
+        /* ISSUED BY & QR GRID */
+        .issued-container { margin-top: 40px; display: flex; justify-content: space-between; align-items: flex-start; }
+        .issued-left { display: flex; align-items: flex-start; gap: 12px; }
+        .logo-img { width: 55px; margin-top: 5px; }
+        .issued-text { font-size: 13px; line-height: 1.4; }
+        .issued-title { font-weight: bold; margin-bottom: 2px; }
+        .nerd-brand { font-size: 18px; font-weight: bold; color: #2e7d32; margin-bottom: 2px; }
+        
+        .qr-side { text-align: right; }
+        #pdf_qrcode { display: inline-block; margin-bottom: 10px; }
+        .verify-text { font-size: 11px; color: #333; max-width: 250px; text-align: left; line-height: 1.3; }
+
+        .pdf-footer { position: absolute; bottom: 30px; width: calc(100% - 110px); font-size: 10px; color: #999; display: flex; justify-content: space-between; border-top: 1px solid #eee; padding-top: 8px; }
+
+        .preview-container { margin: 20px auto; border: 1px solid #ccc; max-width: 400px; }
         #canvasPreview { width: 100%; display: block; }
     </style>
 </head>
@@ -44,14 +64,14 @@
 <div class="container" id="formContainer">
     <h2>Candidate Registration</h2>
     <div class="status-box">
-        <strong>Last NDN in Sheet:</strong> <span id="lastIdPreview">Loading...</span>
+        <strong>Current Sheet NDN:</strong> <span id="lastIdPreview">Loading...</span>
     </div>
 
     <form id="adminForm">
-        <label>Project Title</label>
-        <input type="text" id="title" required placeholder="Full Title Here">
+        <label>Project Title (Auto-Caps)</label>
+        <input type="text" id="title" required>
         <label>Student Name</label>
-        <input type="text" id="name" required placeholder="Cynthia Ogechi Odigbo">
+        <input type="text" id="name" required>
         <label>Institution</label>
         <input type="text" id="institution" required value="Federal Polytechnic, Oko, Anambra State">
         <label>Faculty</label>
@@ -63,90 +83,82 @@
             <option value="Project">Project</option>
             <option value="Thesis">Thesis</option>
         </select>
-        <button type="submit" id="subBtn">UPLOAD & GENERATE OFFICIAL PDF</button>
+        <button type="submit" id="subBtn">UPLOAD & GENERATE PDF</button>
     </form>
 </div>
 
 <div class="container" id="successScreen">
-    <h2 style="color: #2e7d32;">Clearance Generated!</h2>
-    <p>Official ID: <strong id="displayId"></strong></p>
-    
+    <h2 style="color: #2e7d32;">Clearance Ready</h2>
     <div class="preview-container" id="previewArea">
-        <p id="renderingMsg">Rendering HD Preview...</p>
+        <p id="renderingMsg">Generating HD Replica...</p>
     </div>
-
-    <div class="action-btns">
-        <button style="background: #1976d2;" onclick="downloadPDF()">Download Official PDF</button>
-        <button style="background: #555;" onclick="window.location.reload()">Register Another</button>
-    </div>
+    <button style="background: #1976d2;" onclick="downloadPDF()">DOWNLOAD OFFICIAL PDF</button>
+    <button style="background: #555; margin-top:10px;" onclick="window.location.reload()">REGISTER NEW</button>
 </div>
 
 <div id="pdfTemplate">
+    <div class="header-line"></div>
+    <div class="top-ndn">NDN: <span id="pdf_ndn_top"></span></div>
     <div class="pdf-header">NERD Compliance Clearance</div>
-    
-    <div class="pdf-row">
-        <span class="pdf-label">NDN:</span> 
-        <span id="pdf_ndn" style="font-weight: normal;"></span>
-    </div>
 
-    <div style="margin-top: 20px; margin-bottom: 20px; border-top: 1px solid #eee; padding-top: 15px;">
-        <div class="pdf-row" style="align-items: flex-start;">
+    <div class="field-block">
+        <div class="pdf-row">
             <span class="pdf-label">Title:</span>
-            <span id="pdf_title" class="pdf-value-title" style="flex: 1;"></span>
+            <span id="pdf_title" class="pdf-val-title"></span>
         </div>
         <div class="pdf-row">
             <span class="pdf-label">Student name:</span>
-            <span id="pdf_name"></span>
+            <span id="pdf_name" class="pdf-val-reg"></span>
         </div>
         <div class="pdf-row">
             <span class="pdf-label">Institution:</span>
-            <span id="pdf_inst"></span>
+            <span id="pdf_inst" class="pdf-val-reg"></span>
         </div>
         <div class="pdf-row">
             <span class="pdf-label">Faculty:</span>
-            <span id="pdf_faculty"></span>
+            <span id="pdf_faculty" class="pdf-val-reg"></span>
         </div>
         <div class="pdf-row">
             <span class="pdf-label">Department:</span>
-            <span id="pdf_dept"></span>
+            <span id="pdf_dept" class="pdf-val-reg"></span>
         </div>
         <div class="pdf-row">
             <span class="pdf-label">Submission Type:</span>
-            <span id="pdf_type"></span>
+            <span id="pdf_type" class="pdf-val-reg"></span>
         </div>
         <div class="pdf-row">
             <span class="pdf-label">Date of Submission:</span>
-            <span id="pdf_date"></span>
+            <span id="pdf_date" class="pdf-val-reg"></span>
         </div>
     </div>
 
-    <div class="pdf-section-title">Compliance</div>
-    <div style="margin-left: 20px;">
-        <div class="pdf-row">• NCVS Compliance: <i>Not enforced</i></div>
-        <div class="pdf-row">• Academic report submission: <span style="background: #2e7d32; color: white; padding: 0 5px;">Complied</span></div>
-    </div>
+    <div class="section-header">Compliance</div>
+    <div class="sub-text">NCVS Compliance: <i>Not enforced</i></div>
+    <div class="sub-text">Academic report submission: <span class="complied-tag">Complied</span></div>
 
-    <div class="pdf-section-title">Contribution</div>
-    <div class="pdf-row" style="margin-left: 20px;">Amount contributed to support platform: N/A (via Partner)</div>
+    <div class="section-header">Contribution</div>
+    <div class="sub-text">Amount contributed to support platform: N/A (via Partner)</div>
 
-    <div style="margin-top: 50px;">
-        <div style="font-weight: bold;">Issued by</div>
-        <div style="font-size: 18px; font-weight: bold; color: #2e7d32;">NERD</div>
-        <div>The Nigeria Education Repository and Databank (N.E.R.D)</div>
-        <div>Under the National Policy for NERD.</div>
-        <div style="margin-top: 10px; font-size: 12px;">
-            Email: support@ned.gov.ng | Phone: +234 806 004 4989<br>
-            Website: www.ned.gov.ng
+    <div class="issued-container">
+        <div class="issued-left">
+            <img src="logo.png" class="logo-img">
+            <div class="issued-text">
+                <div class="issued-title">Issued by</div>
+                <div class="nerd-brand">NERD</div>
+                <div>The Nigeria Education Repository and Databank (N.E.R.D)</div>
+                <div>Under the National Policy for NERD.</div>
+                <div style="margin-top:5px;">
+                    Email: support@ned.gov.ng | Phone: +234 806 004 4989<br>
+                    Website: www.ned.gov.ng
+                </div>
+            </div>
         </div>
-    </div>
-
-    <div style="margin-top: 30px; font-size: 11px; max-width: 450px; line-height: 1.5;">
-        Verify NDN: http://esmat.ned.gov.ng/ai/esmat/verify-ndn.php?ndn=NDN-<span id="pdf_verify_ndn"></span>
-    </div>
-
-    <div class="pdf-qr-container">
-        <div id="pdf_qrcode"></div>
-        <img src="logo.png" style="width: 30px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 2px;">
+        <div class="qr-side">
+            <div id="pdf_qrcode"></div>
+            <div class="verify-text">
+                Verify NDN: http://esmat.ned.gov.ng/ai/esmat/verify-ndn.php?ndn=NDN-<span id="pdf_verify_id"></span>
+            </div>
+        </div>
     </div>
 
     <div class="pdf-footer">
@@ -158,7 +170,7 @@
 <script>
     const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxpFEhpmi4WOBwuQijSQaZxsVVy5fNz22oYwb14AQ4q9epWGVnDFi7VuyXjaK4sfgnX/exec'; 
     const SHEET_READ_URL = 'https://docs.google.com/spreadsheets/d/1RBpClxl8hIRW3Y0PJdClYRebtGlYu_yJE7IWGVU_7to/gviz/tq?tqx=out:json';
-    const BASE_URL = 'https://esmat-nerd-gov-ng.vercel.app/?id=';
+    const QR_BASE = 'https://esmat-nerd-gov-ng.vercel.app/?id=';
     
     let currentLastId = "";
     let finalCanvas = null;
@@ -171,19 +183,17 @@
             const rows = json.table.rows;
             currentLastId = rows[rows.length - 1].c[0].v;
             document.getElementById('lastIdPreview').innerText = currentLastId;
-        } catch (e) { document.getElementById('lastIdPreview').innerText = "Sync Error"; }
+        } catch (e) { document.getElementById('lastIdPreview').innerText = "Offline"; }
     }
     fetchLastId();
 
     document.getElementById('adminForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('subBtn');
-        btn.disabled = true;
-        btn.innerText = "Processing Cloud Upload...";
+        btn.disabled = true; btn.innerText = "Syncing with Cloud...";
 
         const prefix = currentLastId.substring(0, currentLastId.length - 2); 
-        const nextId = prefix + (parseInt(currentLastId.substring(currentLastId.length - 2), 10) + 1).toString().padStart(2, '0');
-        
+        const nextId = prefix + (parseInt(currentLastId.slice(-2), 10) + 1).toString().padStart(2, '0');
         const now = new Date();
         const dateStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + ' ' + now.toTimeString().split(' ')[0];
 
@@ -197,12 +207,12 @@
         };
 
         try {
-            // 1. Upload to Sheet
+            // Upload
             await fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(formData) });
-            
-            // 2. Populate PDF Template
-            document.getElementById('pdf_ndn').innerText = nextId;
-            document.getElementById('pdf_verify_ndn').innerText = nextId;
+
+            // Fill Template
+            document.getElementById('pdf_ndn_top').innerText = nextId;
+            document.getElementById('pdf_verify_id').innerText = nextId;
             document.getElementById('pdf_title').innerText = formData.title;
             document.getElementById('pdf_name').innerText = formData.name;
             document.getElementById('pdf_inst').innerText = formData.institution;
@@ -211,32 +221,27 @@
             document.getElementById('pdf_type').innerText = formData.type;
             document.getElementById('pdf_date').innerText = dateStr;
 
-            // 3. Generate Official QR
+            // QR
             document.getElementById('pdf_qrcode').innerHTML = "";
             new QRCode(document.getElementById("pdf_qrcode"), {
-                text: BASE_URL + nextId,
-                width: 100,
-                height: 100,
+                text: QR_BASE + nextId,
+                width: 110, height: 110,
                 correctLevel: QRCode.CorrectLevel.H
             });
 
-            // 4. Render HD Snapshot
             document.getElementById('formContainer').style.display = 'none';
             document.getElementById('successScreen').style.display = 'block';
-            document.getElementById('displayId').innerText = nextId;
 
+            // Snapshot
             setTimeout(async () => {
                 const element = document.getElementById('pdfTemplate');
                 finalCanvas = await html2canvas(element, { scale: 3, useCORS: true });
                 document.getElementById('renderingMsg').style.display = 'none';
                 document.getElementById('previewArea').appendChild(finalCanvas);
                 finalCanvas.id = "canvasPreview";
-            }, 500);
+            }, 600);
 
-        } catch (err) {
-            alert("Connection Error");
-            btn.disabled = false;
-        }
+        } catch (err) { alert("Error!"); btn.disabled = false; }
     });
 
     function downloadPDF() {
@@ -244,7 +249,7 @@
         const pdf = new jsPDF('p', 'mm', 'a4');
         const imgData = finalCanvas.toDataURL('image/jpeg', 1.0);
         pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
-        pdf.save(`Clearance_${document.getElementById('pdf_ndn').innerText}.pdf`);
+        pdf.save(`Clearance_${document.getElementById('pdf_ndn_top').innerText}.pdf`);
     }
 </script>
 </body>
