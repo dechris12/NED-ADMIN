@@ -17,11 +17,10 @@
         label { display: block; margin-top: 15px; font-weight: bold; font-size: 13px; }
         input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
         button { width: 100%; padding: 12px; background: #2e7d32; color: white; border: none; border-radius: 4px; font-weight: bold; margin-top: 20px; cursor: pointer; }
-        button:disabled { background: #ccc; cursor: not-allowed; }
+        button:disabled { background: #ccc; }
         
         #successScreen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 1000; text-align: center; padding-top: 40px; }
         #qrcode { margin: 20px auto; display: inline-block; border: 10px solid #f9f9f9; }
-        #qrcode img { margin: 0 auto; }
         .id-display { font-size: 20px; font-weight: bold; color: #2e7d32; margin: 15px 0; }
         .action-btns { display: flex; flex-direction: column; gap: 10px; max-width: 300px; margin: auto; }
         .dl-btn { background: #1976d2; }
@@ -96,7 +95,7 @@
             currentLastId = rows[rows.length - 1].c[0].v;
             document.getElementById('lastIdPreview').innerText = currentLastId;
         } catch (e) {
-            document.getElementById('lastIdPreview').innerText = "Error loading database status";
+            document.getElementById('lastIdPreview').innerText = "Error loading database";
         }
     }
     fetchLastId();
@@ -106,7 +105,12 @@
         e.preventDefault();
         const btn = document.getElementById('subBtn');
         btn.disabled = true;
-        btn.innerText = "Uploading to Sheet...";
+        btn.innerText = "Uploading to Cloud...";
+
+        // Logic to predict the Next ID for the QR code immediately
+        const prefix = currentLastId.substring(0, currentLastId.length - 2); 
+        const lastNum = parseInt(currentLastId.substring(currentLastId.length - 2)); 
+        const nextPredictedId = prefix + (lastNum + 1).toString().padStart(2, '0');
 
         const payload = {
             title: document.getElementById('title').value,
@@ -126,20 +130,11 @@
                 body: JSON.stringify(payload)
             });
 
-            // Calculate the Next ID locally for the QR code display
-            const prefix = currentLastId.substring(0, currentLastId.length - 2);
-            const lastNum = parseInt(currentLastId.substring(currentLastId.length - 2), 10);
-            const nextId = prefix + (lastNum + 1).toString().padStart(2, '0');
-
-            btn.innerText = "Generating QR...";
-            
-            // Short delay to ensure sheet processing is underway
-            setTimeout(() => {
-                showSuccess(nextId);
-            }, 1500);
+            // Since no-cors won't return data, we show success using our predicted ID
+            showSuccess(nextPredictedId);
 
         } catch (err) {
-            alert("Upload Error. Please check your internet or Deployment URL.");
+            alert("Upload Error. Verify your internet connection.");
             btn.disabled = false;
             btn.innerText = "UPLOAD DATA & GENERATE QR";
         }
@@ -152,7 +147,6 @@
         document.getElementById('displayId').innerText = id;
         document.getElementById('displayLink').innerText = fullLink;
 
-        // Generate QR Code
         new QRCode(document.getElementById("qrcode"), {
             text: fullLink,
             width: 256,
@@ -162,10 +156,6 @@
 
     function downloadQR() {
         const img = document.querySelector('#qrcode img');
-        if (!img) {
-            alert("QR Code not ready yet. Please wait a second.");
-            return;
-        }
         const link = document.createElement('a');
         link.href = img.src;
         link.download = `QR_${document.getElementById('displayId').innerText}.png`;
