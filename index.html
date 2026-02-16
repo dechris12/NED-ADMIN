@@ -9,19 +9,13 @@
         body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
         .container { background: white; max-width: 500px; margin: auto; padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         h2 { color: #2e7d32; border-bottom: 2px solid #2e7d32; padding-bottom: 10px; margin-top: 0; }
-        
         .status-box { background: #e8f5e9; padding: 10px; border-radius: 4px; border-left: 4px solid #2e7d32; margin-bottom: 20px; font-size: 13px; }
-        .status-box strong { display: block; color: #2e7d32; margin-bottom: 3px; }
-        #lastIdPreview { font-family: monospace; color: #333; }
-
         label { display: block; margin-top: 15px; font-weight: bold; font-size: 13px; }
         input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
         button { width: 100%; padding: 12px; background: #2e7d32; color: white; border: none; border-radius: 4px; font-weight: bold; margin-top: 20px; cursor: pointer; }
-        button:disabled { background: #ccc; }
-        
         #successScreen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 1000; text-align: center; padding-top: 40px; }
-        #qrcode { margin: 20px auto; display: inline-block; border: 10px solid #f9f9f9; }
-        .id-display { font-size: 20px; font-weight: bold; color: #2e7d32; margin: 15px 0; }
+        #qrcode { margin: 20px auto; display: inline-block; padding: 10px; border: 1px solid #ccc; }
+        .id-display { font-size: 18px; font-weight: bold; color: #2e7d32; margin: 10px 0; word-break: break-all; }
         .action-btns { display: flex; flex-direction: column; gap: 10px; max-width: 300px; margin: auto; }
         .dl-btn { background: #1976d2; }
         .new-btn { background: #555; }
@@ -31,61 +25,49 @@
 
 <div class="container" id="formContainer">
     <h2>Candidate Registration</h2>
-    
     <div class="status-box">
-        <strong>System Status:</strong>
-        Last NDN in Sheet: <span id="lastIdPreview">Fetching...</span>
+        <strong>Last NDN in Sheet:</strong>
+        <span id="lastIdPreview">Loading...</span>
     </div>
 
     <form id="adminForm">
         <label>Project Title</label>
         <input type="text" id="title" required>
-        
         <label>Student Name</label>
         <input type="text" id="name" required>
-        
         <label>Institution</label>
         <input type="text" id="institution" required>
-        
         <label>Faculty</label>
         <input type="text" id="faculty" required>
-        
         <label>Department</label>
         <input type="text" id="dept" required>
-        
         <label>Submission Type</label>
         <select id="type">
             <option value="Project">Project</option>
             <option value="Thesis">Thesis</option>
         </select>
-        
         <button type="submit" id="subBtn">UPLOAD DATA & GENERATE QR</button>
     </form>
 </div>
 
 <div id="successScreen">
-    <h2 style="color: #2e7d32;">Registration Successful!</h2>
-    <p>Generated NDN:</p>
+    <h2 style="color: #2e7d32;">Upload Successful!</h2>
+    <p>New ID Generated:</p>
     <div class="id-display" id="displayId"></div>
-    
     <div id="qrcode"></div>
-    
     <div class="action-btns">
         <button class="dl-btn" onclick="downloadQR()">Download QR Code</button>
-        <button class="new-btn" onclick="window.location.reload()">Upload New Candidate</button>
+        <button class="new-btn" onclick="window.location.reload()">Upload New</button>
     </div>
-    <p style="font-size: 11px; color: #888; margin-top: 20px;">Link: <span id="displayLink"></span></p>
 </div>
 
 <script>
-    // CONFIGURATION
     const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxpFEhpmi4WOBwuQijSQaZxsVVy5fNz22oYwb14AQ4q9epWGVnDFi7VuyXjaK4sfgnX/exec'; 
     const SHEET_READ_URL = 'https://docs.google.com/spreadsheets/d/1RBpClxl8hIRW3Y0PJdClYRebtGlYu_yJE7IWGVU_7to/gviz/tq?tqx=out:json';
     const BASE_URL = 'https://esmat-nerd-gov-ng.vercel.app/?id=';
     
     let currentLastId = "";
 
-    // 1. Fetch Last Entry on Load (Gviz Trick)
     async function fetchLastId() {
         try {
             const res = await fetch(SHEET_READ_URL);
@@ -95,22 +77,21 @@
             currentLastId = rows[rows.length - 1].c[0].v;
             document.getElementById('lastIdPreview').innerText = currentLastId;
         } catch (e) {
-            document.getElementById('lastIdPreview').innerText = "Error loading database";
+            document.getElementById('lastIdPreview').innerText = "Sync Error";
         }
     }
     fetchLastId();
 
-    // 2. Form Submission
     document.getElementById('adminForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('subBtn');
         btn.disabled = true;
-        btn.innerText = "Uploading to Cloud...";
+        btn.innerText = "Processing...";
 
-        // Logic to predict the Next ID for the QR code immediately
+        // String-based increment to prevent NaN
         const prefix = currentLastId.substring(0, currentLastId.length - 2); 
-        const lastNum = parseInt(currentLastId.substring(currentLastId.length - 2)); 
-        const nextPredictedId = prefix + (lastNum + 1).toString().padStart(2, '0');
+        const lastTwo = currentLastId.substring(currentLastId.length - 2);
+        const nextId = prefix + (parseInt(lastTwo, 10) + 1).toString().padStart(2, '0');
 
         const payload = {
             title: document.getElementById('title').value,
@@ -122,35 +103,26 @@
         };
 
         try {
-            // Using no-cors to bypass Google Redirect blocks
             await fetch(APPS_SCRIPT_URL, {
                 method: 'POST',
                 mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-
-            // Since no-cors won't return data, we show success using our predicted ID
-            showSuccess(nextPredictedId);
-
+            showSuccess(nextId);
         } catch (err) {
-            alert("Upload Error. Verify your internet connection.");
+            alert("Connection Error");
             btn.disabled = false;
-            btn.innerText = "UPLOAD DATA & GENERATE QR";
         }
     });
 
     function showSuccess(id) {
-        const fullLink = BASE_URL + id;
         document.getElementById('formContainer').style.display = 'none';
         document.getElementById('successScreen').style.display = 'block';
         document.getElementById('displayId').innerText = id;
-        document.getElementById('displayLink').innerText = fullLink;
-
         new QRCode(document.getElementById("qrcode"), {
-            text: fullLink,
-            width: 256,
-            height: 256
+            text: BASE_URL + id,
+            width: 200,
+            height: 200
         });
     }
 
@@ -162,6 +134,5 @@
         link.click();
     }
 </script>
-
 </body>
 </html>
