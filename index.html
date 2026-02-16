@@ -42,13 +42,9 @@
         .complied-tag { background: #2e7d32; color: white; padding: 1px 6px; border-radius: 2px; font-size: 13px; }
 
         /* ISSUED BY & QR GRID */
-        .issued-container { margin-top: 40px; display: flex; justify-content: space-between; align-items: flex-end; }
-        .issued-left { display: flex; flex-direction: column; align-items: flex-start; }
-        
-        /* New styling for "Issued by" to sit above everything on the left */
-        .issued-title { font-weight: bold; font-size: 14px; margin-bottom: 10px; }
-        
-        .logo-text-group { display: flex; align-items: flex-start; gap: 12px; }
+        .issued-title { font-weight: bold; font-size: 14px; margin-top: 20px; margin-bottom: 5px; }
+        .issued-container { display: flex; justify-content: space-between; align-items: flex-start; }
+        .issued-left { display: flex; align-items: flex-start; gap: 12px; }
         .logo-img { width: 55px; margin-top: 5px; }
         .issued-text { font-size: 13px; line-height: 1.4; }
         .nerd-brand { font-size: 18px; font-weight: bold; color: #2e7d32; margin-bottom: 2px; }
@@ -56,6 +52,7 @@
         .qr-side { text-align: right; display: flex; flex-direction: column; align-items: flex-end; }
         #pdf_qrcode { display: inline-block; margin-bottom: 10px; }
         
+        /* RIGHT ALIGNED VERIFY TEXT */
         .verify-text { 
             font-size: 11px; 
             color: #333; 
@@ -150,19 +147,18 @@
     <div class="section-header">Contribution</div>
     <div class="sub-text">Amount contributed to support platform: N/A (via Partner)</div>
 
+    <div class="issued-title">Issued by</div>
+    
     <div class="issued-container">
         <div class="issued-left">
-            <div class="issued-title">Issued by</div>
-            <div class="logo-text-group">
-                <img src="logo.png" class="logo-img">
-                <div class="issued-text">
-                    <div class="nerd-brand">NERD</div>
-                    <div>The Nigeria Education Repository and Databank (N.E.R.D)</div>
-                    <div>Under the National Policy for NERD.</div>
-                    <div style="margin-top:5px;">
-                        Email: support@ned.gov.ng | Phone: +234 806 004 4989<br>
-                        Website: www.ned.gov.ng
-                    </div>
+            <img src="logo.png" class="logo-img">
+            <div class="issued-text">
+                <div class="nerd-brand">NERD</div>
+                <div>The Nigeria Education Repository and Databank (N.E.R.D)</div>
+                <div>Under the National Policy for NERD.</div>
+                <div style="margin-top:5px;">
+                    Email: support@ned.gov.ng | Phone: +234 806 004 4989<br>
+                    Website: www.ned.gov.ng
                 </div>
             </div>
         </div>
