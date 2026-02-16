@@ -3,12 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - NDN Generator & PDF System</title>
-    
+    <title>Admin - NDN Generator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
     <style>
         body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
         .container { background: white; max-width: 500px; margin: auto; padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
@@ -17,26 +13,12 @@
         label { display: block; margin-top: 15px; font-weight: bold; font-size: 13px; }
         input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
         button { width: 100%; padding: 12px; background: #2e7d32; color: white; border: none; border-radius: 4px; font-weight: bold; margin-top: 20px; cursor: pointer; }
-        
-        #successScreen { display: none; text-align: center; }
-        
-        /* THE HIDDEN PDF TEMPLATE - PIXEL PERFECT SETUP */
-        #pdfTemplate {
-            position: absolute; left: -9999px; top: -9999px; /* Hidden from view */
-            width: 794px; height: 1123px; /* A4 size at 96 DPI */
-            background: white; padding: 60px; box-sizing: border-box;
-            color: #000; text-align: left; line-height: 1.3;
-        }
-        .pdf-header { text-align: center; font-weight: bold; font-size: 22px; margin-bottom: 30px; }
-        .pdf-section-title { font-weight: bold; margin-top: 20px; margin-bottom: 5px; text-decoration: underline; }
-        .pdf-row { margin-bottom: 4px; font-size: 15px; display: flex; }
-        .pdf-label { font-weight: bold; min-width: 130px; }
-        .pdf-value-title { font-weight: bold; text-transform: uppercase; }
-        .pdf-qr-container { position: absolute; right: 60px; top: 380px; text-align: center; }
-        .pdf-footer { position: absolute; bottom: 40px; width: calc(100% - 120px); border-top: 1px solid #eee; padding-top: 10px; font-size: 10px; color: #888; display: flex; justify-content: space-between; }
-        
-        .preview-container { margin: 20px auto; border: 1px solid #ccc; max-width: 400px; box-shadow: 0 0 10px rgba(0,0,0,0.2); }
-        #canvasPreview { width: 100%; display: block; }
+        #successScreen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 1000; text-align: center; padding-top: 40px; }
+        #qrcode { margin: 20px auto; display: inline-block; padding: 10px; border: 1px solid #ccc; }
+        .id-display { font-size: 18px; font-weight: bold; color: #2e7d32; margin: 10px 0; word-break: break-all; }
+        .action-btns { display: flex; flex-direction: column; gap: 10px; max-width: 300px; margin: auto; }
+        .dl-btn { background: #1976d2; }
+        .new-btn { background: #555; }
     </style>
 </head>
 <body>
@@ -44,16 +26,17 @@
 <div class="container" id="formContainer">
     <h2>Candidate Registration</h2>
     <div class="status-box">
-        <strong>Last NDN in Sheet:</strong> <span id="lastIdPreview">Loading...</span>
+        <strong>Last NDN in Sheet:</strong>
+        <span id="lastIdPreview">Loading...</span>
     </div>
 
     <form id="adminForm">
         <label>Project Title</label>
-        <input type="text" id="title" required placeholder="Full Title Here">
+        <input type="text" id="title" required>
         <label>Student Name</label>
-        <input type="text" id="name" required placeholder="Cynthia Ogechi Odigbo">
+        <input type="text" id="name" required>
         <label>Institution</label>
-        <input type="text" id="institution" required value="Federal Polytechnic, Oko, Anambra State">
+        <input type="text" id="institution" required>
         <label>Faculty</label>
         <input type="text" id="faculty" required>
         <label>Department</label>
@@ -63,95 +46,18 @@
             <option value="Project">Project</option>
             <option value="Thesis">Thesis</option>
         </select>
-        <button type="submit" id="subBtn">UPLOAD & GENERATE OFFICIAL PDF</button>
+        <button type="submit" id="subBtn">UPLOAD DATA & GENERATE QR</button>
     </form>
 </div>
 
-<div class="container" id="successScreen">
-    <h2 style="color: #2e7d32;">Clearance Generated!</h2>
-    <p>Official ID: <strong id="displayId"></strong></p>
-    
-    <div class="preview-container" id="previewArea">
-        <p id="renderingMsg">Rendering HD Preview...</p>
-    </div>
-
+<div id="successScreen">
+    <h2 style="color: #2e7d32;">Upload Successful!</h2>
+    <p>New ID Generated:</p>
+    <div class="id-display" id="displayId"></div>
+    <div id="qrcode"></div>
     <div class="action-btns">
-        <button style="background: #1976d2;" onclick="downloadPDF()">Download Official PDF</button>
-        <button style="background: #555;" onclick="window.location.reload()">Register Another</button>
-    </div>
-</div>
-
-<div id="pdfTemplate">
-    <div class="pdf-header">NERD Compliance Clearance</div>
-    
-    <div class="pdf-row">
-        <span class="pdf-label">NDN:</span> 
-        <span id="pdf_ndn" style="font-weight: normal;"></span>
-    </div>
-
-    <div style="margin-top: 20px; margin-bottom: 20px; border-top: 1px solid #eee; padding-top: 15px;">
-        <div class="pdf-row" style="align-items: flex-start;">
-            <span class="pdf-label">Title:</span>
-            <span id="pdf_title" class="pdf-value-title" style="flex: 1;"></span>
-        </div>
-        <div class="pdf-row">
-            <span class="pdf-label">Student name:</span>
-            <span id="pdf_name"></span>
-        </div>
-        <div class="pdf-row">
-            <span class="pdf-label">Institution:</span>
-            <span id="pdf_inst"></span>
-        </div>
-        <div class="pdf-row">
-            <span class="pdf-label">Faculty:</span>
-            <span id="pdf_faculty"></span>
-        </div>
-        <div class="pdf-row">
-            <span class="pdf-label">Department:</span>
-            <span id="pdf_dept"></span>
-        </div>
-        <div class="pdf-row">
-            <span class="pdf-label">Submission Type:</span>
-            <span id="pdf_type"></span>
-        </div>
-        <div class="pdf-row">
-            <span class="pdf-label">Date of Submission:</span>
-            <span id="pdf_date"></span>
-        </div>
-    </div>
-
-    <div class="pdf-section-title">Compliance</div>
-    <div style="margin-left: 20px;">
-        <div class="pdf-row">• NCVS Compliance: <i>Not enforced</i></div>
-        <div class="pdf-row">• Academic report submission: <span style="background: #2e7d32; color: white; padding: 0 5px;">Complied</span></div>
-    </div>
-
-    <div class="pdf-section-title">Contribution</div>
-    <div class="pdf-row" style="margin-left: 20px;">Amount contributed to support platform: N/A (via Partner)</div>
-
-    <div style="margin-top: 50px;">
-        <div style="font-weight: bold;">Issued by</div>
-        <div style="font-size: 18px; font-weight: bold; color: #2e7d32;">NERD</div>
-        <div>The Nigeria Education Repository and Databank (N.E.R.D)</div>
-        <div>Under the National Policy for NERD.</div>
-        <div style="margin-top: 10px; font-size: 12px;">
-            Email: support@ned.gov.ng | Phone: +234 806 004 4989<br>
-            Website: www.ned.gov.ng
-        </div>
-    </div>
-
-    <div style="margin-top: 30px; font-size: 11px; max-width: 450px; line-height: 1.5;">
-        Verify NDN: http://esmat.ned.gov.ng/ai/esmat/verify-ndn.php?ndn=NDN-<span id="pdf_verify_ndn"></span>
-    </div>
-
-    <div class="pdf-qr-container">
-        <div id="pdf_qrcode"></div>
-        <img src="logo.png" style="width: 30px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 2px;">
-    </div>
-
-    <div class="pdf-footer">
-        <span>Powered by TCPDF (www.tcpdf.org)</span>
-        <span>1 / 1</span>
+        <button class="dl-btn" onclick="downloadQR()">Download QR Code</button>
+        <button class="new-btn" onclick="window.location.reload()">Upload New</button>
     </div>
 </div>
 
@@ -161,7 +67,6 @@
     const BASE_URL = 'https://esmat-nerd-gov-ng.vercel.app/?id=';
     
     let currentLastId = "";
-    let finalCanvas = null;
 
     async function fetchLastId() {
         try {
@@ -171,7 +76,9 @@
             const rows = json.table.rows;
             currentLastId = rows[rows.length - 1].c[0].v;
             document.getElementById('lastIdPreview').innerText = currentLastId;
-        } catch (e) { document.getElementById('lastIdPreview').innerText = "Sync Error"; }
+        } catch (e) {
+            document.getElementById('lastIdPreview').innerText = "Sync Error";
+        }
     }
     fetchLastId();
 
@@ -179,15 +86,14 @@
         e.preventDefault();
         const btn = document.getElementById('subBtn');
         btn.disabled = true;
-        btn.innerText = "Processing Cloud Upload...";
+        btn.innerText = "Processing...";
 
+        // Split string to avoid math on the long prefix
         const prefix = currentLastId.substring(0, currentLastId.length - 2); 
-        const nextId = prefix + (parseInt(currentLastId.substring(currentLastId.length - 2), 10) + 1).toString().padStart(2, '0');
-        
-        const now = new Date();
-        const dateStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + ' ' + now.toTimeString().split(' ')[0];
+        const lastTwo = currentLastId.substring(currentLastId.length - 2);
+        const nextId = prefix + (parseInt(lastTwo, 10) + 1).toString().padStart(2, '0');
 
-        const formData = {
+        const payload = {
             title: document.getElementById('title').value,
             name: document.getElementById('name').value,
             institution: document.getElementById('institution').value,
@@ -197,54 +103,35 @@
         };
 
         try {
-            // 1. Upload to Sheet
-            await fetch(APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(formData) });
-            
-            // 2. Populate PDF Template
-            document.getElementById('pdf_ndn').innerText = nextId;
-            document.getElementById('pdf_verify_ndn').innerText = nextId;
-            document.getElementById('pdf_title').innerText = formData.title;
-            document.getElementById('pdf_name').innerText = formData.name;
-            document.getElementById('pdf_inst').innerText = formData.institution;
-            document.getElementById('pdf_faculty').innerText = formData.faculty;
-            document.getElementById('pdf_dept').innerText = formData.dept;
-            document.getElementById('pdf_type').innerText = formData.type;
-            document.getElementById('pdf_date').innerText = dateStr;
-
-            // 3. Generate Official QR
-            document.getElementById('pdf_qrcode').innerHTML = "";
-            new QRCode(document.getElementById("pdf_qrcode"), {
-                text: BASE_URL + nextId,
-                width: 100,
-                height: 100,
-                correctLevel: QRCode.CorrectLevel.H
+            await fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify(payload)
             });
-
-            // 4. Render HD Snapshot
-            document.getElementById('formContainer').style.display = 'none';
-            document.getElementById('successScreen').style.display = 'block';
-            document.getElementById('displayId').innerText = nextId;
-
-            setTimeout(async () => {
-                const element = document.getElementById('pdfTemplate');
-                finalCanvas = await html2canvas(element, { scale: 3, useCORS: true });
-                document.getElementById('renderingMsg').style.display = 'none';
-                document.getElementById('previewArea').appendChild(finalCanvas);
-                finalCanvas.id = "canvasPreview";
-            }, 500);
-
+            showSuccess(nextId);
         } catch (err) {
             alert("Connection Error");
             btn.disabled = false;
         }
     });
 
-    function downloadPDF() {
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const imgData = finalCanvas.toDataURL('image/jpeg', 1.0);
-        pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
-        pdf.save(`Clearance_${document.getElementById('pdf_ndn').innerText}.pdf`);
+    function showSuccess(id) {
+        document.getElementById('formContainer').style.display = 'none';
+        document.getElementById('successScreen').style.display = 'block';
+        document.getElementById('displayId').innerText = id;
+        new QRCode(document.getElementById("qrcode"), {
+            text: BASE_URL + id,
+            width: 256,
+            height: 256
+        });
+    }
+
+    function downloadQR() {
+        const img = document.querySelector('#qrcode img');
+        const link = document.createElement('a');
+        link.href = img.src;
+        link.download = `QR_${document.getElementById('displayId').innerText}.png`;
+        link.click();
     }
 </script>
 </body>
