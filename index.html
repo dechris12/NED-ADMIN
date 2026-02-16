@@ -88,7 +88,7 @@
         btn.disabled = true;
         btn.innerText = "Processing...";
 
-        // String-based increment to prevent NaN
+        // Split string to avoid math on the long prefix
         const prefix = currentLastId.substring(0, currentLastId.length - 2); 
         const lastTwo = currentLastId.substring(currentLastId.length - 2);
         const nextId = prefix + (parseInt(lastTwo, 10) + 1).toString().padStart(2, '0');
@@ -121,8 +121,8 @@
         document.getElementById('displayId').innerText = id;
         new QRCode(document.getElementById("qrcode"), {
             text: BASE_URL + id,
-            width: 200,
-            height: 200
+            width: 256,
+            height: 256
         });
     }
 
