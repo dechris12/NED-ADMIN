@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - NDN Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
+        .container { background: white; max-width: 500px; margin: auto; padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { color: #2e7d32; border-bottom: 2px solid #2e7d32; padding-bottom: 10px; }
+        label { display: block; margin-top: 15px; font-weight: bold; font-size: 13px; }
+        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #2e7d32; color: white; border: none; border-radius: 4px; font-weight: bold; margin-top: 20px; cursor: pointer; }
+        
+        /* Success Screen Overlay */
+        #successScreen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 1000; text-align: center; padding-top: 40px; }
+        #qrcode { margin: 20px auto; display: inline-block; border: 10px solid #f9f9f9; }
+        .id-display { font-size: 20px; font-weight: bold; color: #2e7d32; margin: 15px 0; }
+        .action-btns { display: flex; flex-direction: column; gap: 10px; max-width: 300px; margin: auto; }
+        .dl-btn { background: #1976d2; }
+        .new-btn { background: #555; }
+    </style>
+</head>
+<body>
+
+<div class="container" id="formContainer">
+    <h2>Candidate Registration</h2>
+    <form id="adminForm">
+        <label>Project Title</label>
+        <input type="text" id="title" required>
+        
+        <label>Student Name</label>
+        <input type="text" id="name" required>
+        
+        <label>Institution</label>
+        <input type="text" id="institution" required>
+        
+        <label>Faculty</label>
+        <input type="text" id="faculty" required>
+        
+        <label>Department</label>
+        <input type="text" id="dept" required>
+        
+        <label>Submission Type</label>
+        <select id="type">
+            <option value="Project">Project</option>
+            <option value="Thesis">Thesis</option>
+        </select>
+        
+        <button type="submit" id="subBtn">UPLOAD DATA & GENERATE QR</button>
+    </form>
+</div>
+
+<div id="successScreen">
+    <h2 style="color: #2e7d32;">Registration Successful!</h2>
+    <p>Generated NDN:</p>
+    <div class="id-display" id="displayId"></div>
+    
+    <div id="qrcode"></div>
+    
+    <div class="action-btns">
+        <button class="dl-btn" onclick="downloadQR()">Download QR Code</button>
+        <button class="new-btn" onclick="window.location.reload()">Upload New Candidate</button>
+    </div>
+    <p style="font-size: 11px; color: #888; margin-top: 20px;">Link: <span id="displayLink"></span></p>
+</div>
+
+<script>
+    const APPS_SCRIPT_URL = 'YOUR_WEB_APP_URL_HERE'; // PASTE YOUR URL HERE
+    const BASE_URL = 'https://esmat-nerd-gov-ng.vercel.app/?id=';
+
+    document.getElementById('adminForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('subBtn');
+        btn.disabled = true;
+        btn.innerText = "Uploading to Database...";
+
+        const payload = {
+            title: document.getElementById('title').value,
+            name: document.getElementById('name').value,
+            institution: document.getElementById('institution').value,
+            faculty: document.getElementById('faculty').value,
+            dept: document.getElementById('dept').value,
+            type: document.getElementById('type').value
+        };
+
+        try {
+            const response = await fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+            const res = await response.json();
+
+            if (res.result === 'success') {
+                showSuccess(res.id);
+            }
+        } catch (err) {
+            alert("Connection Error. Check if Apps Script is deployed to 'Anyone'.");
+            btn.disabled = false;
+            btn.innerText = "UPLOAD DATA & GENERATE QR";
+        }
+    });
+
+    function showSuccess(id) {
+        const fullLink = BASE_URL + id;
+        document.getElementById('formContainer').style.display = 'none';
+        document.getElementById('successScreen').style.display = 'block';
+        document.getElementById('displayId').innerText = id;
+        document.getElementById('displayLink').innerText = fullLink;
+
+        // Generate QR Code
+        new QRCode(document.getElementById("qrcode"), {
+            text: fullLink,
+            width: 256,
+            height: 256
+        });
+    }
+
+    function downloadQR() {
+        const img = document.querySelector('#qrcode img');
+        const link = document.createElement('a');
+        link.href = img.src;
+        link.download = `QR_${document.getElementById('displayId').innerText}.png`;
+        link.click();
+    }
+</script>
+
+</body>
+</html>
